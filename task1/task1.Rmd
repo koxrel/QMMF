@@ -1,0 +1,191 @@
+---
+title: "Assignment on Properties of Stock Returns"
+output:  html_notebook
+---
+
+The following stocks have been chosen to complete the assignment:
+
+* Bristow Group Inc (BRS);
+* Dr. Reddy's Laboratories (RDY);
+* Anadarko Petroleum Corp. (APC).
+
+All data is obtained from Google Finance (except for S&P500 index, which is obtained from Yahoo Finance) for a period since 2009/01/01, each observation is a single day.
+
+The closing price is obtained the following way:
+
+```{r warning = FALSE, message = FALSE}
+library(quantmod)
+brs = Cl(getSymbols('BRS', src='google', auto.assign=FALSE, from='2009-01-01'))
+rdy = Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2009-01-01'))
+apc = Cl(getSymbols('APC', src='google', auto.assign=FALSE, from='2009-01-01'))
+sp5 = Cl(getSymbols('^GSPC', src='yahoo', auto.assign=FALSE, from='2009-01-01'))
+```
+
+### Task (a)
+
+> Check for the missing data and remove the respective entries from the dataset, if any.
+If you did find the missing data, make a comment on this in your report.
+
+There is no missing values in the datasets, and the number of observations is consistent across the datasets.
+```{r}
+any(is.na(brs))
+any(is.na(rdy))
+any(is.na(apc))
+any(is.na(sp5))
+
+all.equal(length(brs), length(rdy), length(apc), length(sp5))
+```
+
+### Task (b)
+
+> Compute and plot the simple returns on these securities against time. Use the adjusted
+price. Comment on the plot (how volatile the data are, volatility clustering, outliers
+etc).
+
+First, simple daily returns will be precomputed. The results will be used in this and the following tasks.
+```{r}
+rtbrs = dailyReturn(brs)
+rtrdy = dailyReturn(rdy)
+rtapc = dailyReturn(apc)
+rtsp5 = dailyReturn(sp5)
+```
+
+#### BRS
+Some volatility can be observed from 2015 till the end of the period. Flunctuations were observed at the start, fading out later; however, the middle part seems stable, with returns being no more than 5% in absolute value, with the exception of outliers.
+```{r echo=FALSE}
+plot(rtbrs, main='Simple daily returns of BRS')
+```
+
+#### RDY
+The data seems stable: daily returns rarely breach the [-0.05; 0.05] interval with the exception of outliers, most notable of them occurring on 2015-11-06 and 2016-07-26.
+```{r echo=FALSE}
+plot(rtrdy, main='Simple daily returns of RDY')
+```
+
+#### APC
+There are periods of high volatility: they are rather short, but frequent, with outliers overstepping the 10% boundary. 
+```{r echo=FALSE}
+plot(rtapc, main='Simple daily returns of APC')
+```
+
+### S&P 500
+As a stock market index, S&P 500 will only experience significant flunctuations only if the situation of the whole market is changing. There are periods of fading oscillations, however, even them breaching 4% is a rare event.  
+```{r echo=FALSE}
+plot(rtsp5)
+```
+
+### Task (c)
+
+> Compute the sample mean, standard deviation, skewness, excess kurtosis, minimum,
+and maximum of each simple return series. Comment on each statistic briefly.
+
+#### BRS
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, and an investor may gain/lose around 3% each day. 
+
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 35%, however, he might have gained 20% on a different day as well.
+
+The data is moderately skewed on the left side. The kurtosis value indicates very high weight of the distribution tales, meaning constant and significant in value deviations from zero mean. Overall, the distribution is far from normal.
+```{r echo=FALSE}
+library(fBasics)
+basicStats(rtbrs)
+```
+
+#### RDY
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, and an investor may gain/lose around 2% each day. 
+
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 18%, however, he might have gained 10-11% on a different day as well.
+
+The data is moderately skewed on the left side. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution is far from normal.
+```{r}
+basicStats(rtrdy)
+```
+
+#### APC
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, and an investor may gain/lose around 2.5% a day. 
+
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 19%, however, he might have gained 15% on a different day as well.
+
+udging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
+```{r}
+basicStats(rtapc)
+```
+
+#### S&P 500
+The mean is close to zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, and an investor may gain/lose around 1% a day on the market. 
+
+Min and max value are influenced by outliers (however, they seem much closer to the standard deviation than individual stocks), indicating that in a day an investor might have lost 7%, however, he might have gained 7% on a different day as well (on the given market).
+
+Judging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
+```{r}
+basicStats(rtsp5)
+```
+
+### Task (d)
+
+>  Obtain the histogram and the estimate of density of the simple returns for all time
+series. Impose the theoretical normal density on your histogram. Do the returns seem
+to be normally distributed?
+
+The following function is used to plot histograms:
+```{r}
+plot_hist = function(stock_returns, stock_name, xlim=c(-0.3, 0.3)){
+  hist(stock_returns, breaks=100, prob=T, xlim = xlim, main=paste('Histogram of simple daily returns — ', stock_name))
+  lines(density(stock_returns))
+  curve(dnorm(x, mean(stock_returns), sd(stock_returns)), from=xlim[1], to=xlim[2], add=T, col='red')
+}
+```
+
+#### BRS
+The distribution cannot be considered normal.
+```{r fig.width = 12, echo=FALSE}
+plot_hist(rtbrs, 'BRS')
+```
+
+#### RDY
+Despite the high peak, the data is close to the normal distribution.
+```{r fig.width = 12, echo=FALSE}
+plot_hist(rtrdy, 'RDY')
+```
+
+#### APC
+
+```{r fig.width=12}
+plot_hist(rtapc, 'APC')
+```
+
+#### S&P 500
+
+```{r fig.width=12}
+plot_hist(rtsp5, 'S&P 500', c(-0.1, 0.1))
+```
+
+### Task (e)
+#### BRS
+```{r fig.width=12}
+library(car)
+qqPlot(rtbrs)
+```
+
+#### RDY
+```{r fig.width=12}
+qqPlot(rtrdy)
+```
+
+
+#### APC
+```{r fig.width=12}
+qqPlot(rtapc)
+```
+
+
+#### S&P 500
+```{r fig.width=12}
+qqPlot(rtsp5)
+```
+
+### Task (f)
+
+```{r}
+jarqueberaTest(as.numeric(rtapc))
+```
+
