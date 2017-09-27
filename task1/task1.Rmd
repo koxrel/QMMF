@@ -1,6 +1,7 @@
 ---
 title: "Assignment on Properties of Stock Returns"
 output:  html_notebook
+author: Igor
 ---
 
 The following stocks have been chosen to complete the assignment:
@@ -185,7 +186,36 @@ qqPlot(rtsp5)
 
 ### Task (f)
 
+#### BRS
+
+```{r}
+jarqueberaTest(as.numeric(rtbrs))
+```
+
+
+#### RDY
+
+```{r}
+jarqueberaTest(as.numeric(rtrdy))
+```
+
+
+#### APC
+
 ```{r}
 jarqueberaTest(as.numeric(rtapc))
+```
+
+
+#### S&P 500
+
+```{r}
+jarqueberaTest(as.numeric(rtsp5))
+```
+
+```{r}
+head(diff(log(brs)))
+jarqueberaTest(as.numeric(diff(log(sp5))))
+t.test(as.numeric(diff(log(brs))))
 ```
 
