@@ -1,7 +1,7 @@
 ---
 title: "Assignment on Properties of Stock Returns"
 output:  html_notebook
-author: Igor
+author: Igor Tresoumov, BBI141
 ---
 
 The following stocks have been chosen to complete the assignment:
@@ -34,7 +34,7 @@ any(is.na(rdy))
 any(is.na(apc))
 any(is.na(sp5))
 
-all.equal(length(brs), length(rdy), length(apc), length(sp5))
+all.equal(1400, length(rdy), length(apc), length(sp5))
 ```
 
 ### Task (b)
@@ -88,7 +88,7 @@ Min and max value are influenced by outliers, indicating that in a day an invest
 The data is moderately skewed on the left side. The kurtosis value indicates very high weight of the distribution tales, meaning constant and significant in value deviations from zero mean. Overall, the distribution is far from normal.
 ```{r echo=FALSE}
 library(fBasics)
-basicStats(rtbrs)
+basicStats(as.numeric(rtbrs))
 ```
 
 #### RDY
@@ -98,7 +98,7 @@ Min and max value are influenced by outliers, indicating that in a day an invest
 
 The data is moderately skewed on the left side. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution is far from normal.
 ```{r}
-basicStats(rtrdy)
+basicStats(as.numeric(rtrdy))
 ```
 
 #### APC
@@ -108,7 +108,7 @@ Min and max value are influenced by outliers, indicating that in a day an invest
 
 udging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
 ```{r}
-basicStats(rtapc)
+basicStats(as.numeric(rtapc))
 ```
 
 #### S&P 500
@@ -118,7 +118,7 @@ Min and max value are influenced by outliers (however, they seem much closer to 
 
 Judging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
 ```{r}
-basicStats(rtsp5)
+basicStats(as.numeric(rtsp5))
 ```
 
 ### Task (d)
@@ -130,9 +130,9 @@ to be normally distributed?
 The following function is used to plot histograms:
 ```{r}
 plot_hist = function(stock_returns, stock_name, xlim=c(-0.3, 0.3)){
-  hist(stock_returns, breaks=100, prob=T, xlim = xlim, main=paste('Histogram of simple daily returns — ', stock_name))
-  lines(density(stock_returns))
-  curve(dnorm(x, mean(stock_returns), sd(stock_returns)), from=xlim[1], to=xlim[2], add=T, col='red')
+  hist(as.numeric(stock_returns), breaks=100, prob=T, xlim = xlim, main=paste('Histogram of simple daily returns — ', stock_name))
+  lines(density(as.numeric(stock_returns)))
+  curve(dnorm(x, mean(as.numeric(stock_returns)), sd(as.numeric(stock_returns))), from=xlim[1], to=xlim[2], add=T, col='red')
 }
 ```
 
@@ -150,41 +150,46 @@ plot_hist(rtrdy, 'RDY')
 
 #### APC
 
-```{r fig.width=12}
+```{r fig.width=12, echo=FALSE}
 plot_hist(rtapc, 'APC')
 ```
 
 #### S&P 500
 
-```{r fig.width=12}
+```{r fig.width=12, echo=FALSE}
 plot_hist(rtsp5, 'S&P 500', c(-0.1, 0.1))
 ```
 
 ### Task (e)
+
+> Obtain a qq-plot using command qq.plot() from package car and comment on that.
+
 #### BRS
-```{r fig.width=12}
+```{r fig.width=12, echo=FALSE}
 library(car)
-qqPlot(rtbrs)
+qqPlot(as.numeric(rtbrs))
 ```
 
 #### RDY
-```{r fig.width=12}
-qqPlot(rtrdy)
+```{r fig.width=12, echo=FALSE}
+qqPlot(as.numeric(rtrdy))
 ```
 
 
 #### APC
-```{r fig.width=12}
-qqPlot(rtapc)
+```{r fig.width=12, echo=FALSE}
+qqPlot(as.numeric(rtapc))
 ```
 
 
 #### S&P 500
-```{r fig.width=12}
-qqPlot(rtsp5)
+```{r fig.width=12, echo=FALSE}
+qqPlot(as.numeric(rtsp5))
 ```
 
 ### Task (f)
+
+> Perform the Jarque-Bera normality test.
 
 #### BRS
 
@@ -212,10 +217,164 @@ jarqueberaTest(as.numeric(rtapc))
 ```{r}
 jarqueberaTest(as.numeric(rtsp5))
 ```
+### Task (g)
 
+> Transform the simple returns to log returns. Compute the sample mean, standard
+deviation, skewness, excess kurtosis, minimum, and maximum of each log return series.
+Comment on each statistic briefly.
+
+First, the log returns will be precomputed:
 ```{r}
-head(diff(log(brs)))
-jarqueberaTest(as.numeric(diff(log(sp5))))
-t.test(as.numeric(diff(log(brs))))
+logrtbrs = na.omit(as.numeric(diff(log(brs))))
+logrtrdy = na.omit(as.numeric(diff(log(rdy))))
+logrtapc = na.omit(as.numeric(diff(log(apc))))
+logrtsp5 = na.omit(as.numeric(diff(log(sp5))))
 ```
 
+#### BRS
+
+```{r}
+basicStats(logrtbrs)
+```
+
+#### RDY
+
+```{r}
+basicStats(logrtrdy)
+```
+
+#### APC
+```{r}
+basicStats(logrtapc)
+```
+
+#### S&P 500
+
+```{r}
+basicStats(logrtsp5)
+```
+
+### Task (h)
+
+> Test the null hypothesis that the mean of the log returns is zero.
+
+#### BRS
+```{r}
+t.test(logrtbrs)
+```
+
+#### RDY
+```{r}
+t.test(logrtrdy)
+```
+
+#### APC
+```{r}
+t.test(logrtapc)
+```
+
+#### S&P 500
+```{r}
+t.test(logrtsp5)
+```
+
+
+### Task (i)
+
+> Perform the Jarque-Bera normality test for log returns.
+
+#### BRS
+
+```{r}
+jarqueberaTest(logrtbrs)
+```
+
+
+#### RDY
+
+```{r}
+jarqueberaTest(logrtrdy)
+```
+
+
+#### APC
+
+```{r}
+jarqueberaTest(logrtapc)
+```
+
+
+#### S&P 500
+
+```{r}
+jarqueberaTest(logrtsp5)
+```
+
+### Task (j)
+
+> Obtain the histogram and the empirical density plot of the daily log returns.
+
+```{r}
+plot_hist_log = function(stock_returns, stock_name, xlim=c(-0.3, 0.3)){
+  hist(as.numeric(stock_returns), breaks=100, prob=T, xlim = xlim, main=paste('Histogram of log daily returns — ', stock_name))
+  lines(density(as.numeric(stock_returns)))
+  #curve(dnorm(x, mean(as.numeric(stock_returns)), sd(as.numeric(stock_returns))), from=xlim[1], to=xlim[2], add=T, col='red')
+}
+```
+
+#### BRS
+```{r}
+plot_hist_log(logrtbrs, 'BRS')
+```
+
+#### RDY
+```{r}
+plot_hist_log(logrtrdy, 'RDY')
+```
+
+#### APC
+```{r}
+plot_hist_log(logrtapc, 'APC')
+```
+
+#### S&P 500
+```{r}
+plot_hist_log(logrtsp5, 'S&P 500', c(-0.07, 0.07))
+```
+
+#### Task (k)
+
+> Compute the Pearson’s correlation, Kendall’s tau and Spearman’s rank correlations
+between the log returns of the three stocks and the S&P 500 index. Construct the
+respective scatter plots. Comment on the results.
+
+```{r}
+correl = function(log_rt) {
+  plot(log_rt,logrtsp5)
+  cat('Pearson correlation: ', cor(log_rt, logrtsp5), '\n')
+  cat('Spearman correlation: ', cor(log_rt, logrtsp5, method='spearman'), '\n')
+  cat('Kendall tau: ', cor(log_rt, logrtsp5, method='kendall'), '\n')
+}
+```
+
+
+#### BRS
+```{r}
+correl(logrtbrs)
+```
+
+#### RDY
+```{r}
+correl(logrtrdy)
+```
+
+#### APC
+```{r}
+correl(logrtapc)
+```
+
+
+#### BRS
+#### RDY
+#### APC
+#### S&P 500
