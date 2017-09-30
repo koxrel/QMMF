@@ -1,7 +1,9 @@
 ---
 title: "Assignment on Properties of Stock Returns"
-output:  html_notebook
-author: Igor Tresoumov, BBI141
+author: "Igor Tresoumov, BBI141"
+output:
+  word_document: default
+  html_notebook: default
 ---
 
 The following stocks have been chosen to complete the assignment:
@@ -11,6 +13,8 @@ The following stocks have been chosen to complete the assignment:
 * Anadarko Petroleum Corp. (APC).
 
 All data is obtained from Google Finance (except for S&P500 index, which is obtained from Yahoo Finance) for a period since 2009/01/01, each observation is a single day.
+
+**All statistical assumptions and conclusions are made on the 5% significance level.**
 
 The closing price is obtained the following way:
 
@@ -29,12 +33,10 @@ If you did find the missing data, make a comment on this in your report.
 
 There is no missing values in the datasets, and the number of observations is consistent across the datasets.
 ```{r}
-any(is.na(brs))
-any(is.na(rdy))
-any(is.na(apc))
-any(is.na(sp5))
-
-all.equal(1400, length(rdy), length(apc), length(sp5))
+any(is.na(as.numeric(brs)))
+any(is.na(as.numeric(rdy)))
+any(is.na(as.numeric(apc)))
+any(is.na(as.numeric(sp5)))
 ```
 
 ### Task (b)
@@ -85,8 +87,8 @@ The mean is almost zero, proving the hypothesis of stocks not being profitable i
 
 Min and max value are influenced by outliers, indicating that in a day an investor might have lost 35%, however, he might have gained 20% on a different day as well.
 
-The data is moderately skewed on the left side. The kurtosis value indicates very high weight of the distribution tales, meaning constant and significant in value deviations from zero mean. Overall, the distribution is far from normal.
-```{r echo=FALSE}
+The data is moderately skewed on the left side. The kurtosis value indicates very high weight of the distribution tales, meaning constant and significant in value deviations from zero. Overall, the distribution is far from normal.
+```{r echo=FALSE, message = FALSE}
 library(fBasics)
 basicStats(as.numeric(rtbrs))
 ```
@@ -96,7 +98,7 @@ The mean is almost zero, proving the hypothesis of stocks not being profitable i
 
 Min and max value are influenced by outliers, indicating that in a day an investor might have lost 18%, however, he might have gained 10-11% on a different day as well.
 
-The data is moderately skewed on the left side. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution is far from normal.
+The data is moderately skewed on the left side. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero. Overall, the distribution is far from normal.
 ```{r}
 basicStats(as.numeric(rtrdy))
 ```
@@ -106,7 +108,7 @@ The mean is almost zero, proving the hypothesis of stocks not being profitable i
 
 Min and max value are influenced by outliers, indicating that in a day an investor might have lost 19%, however, he might have gained 15% on a different day as well.
 
-udging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
+udging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero. Overall, the distribution cannot be considered normal.
 ```{r}
 basicStats(as.numeric(rtapc))
 ```
@@ -116,7 +118,7 @@ The mean is close to zero, proving the hypothesis of stocks not being profitable
 
 Min and max value are influenced by outliers (however, they seem much closer to the standard deviation than individual stocks), indicating that in a day an investor might have lost 7%, however, he might have gained 7% on a different day as well (on the given market).
 
-Judging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero mean. Overall, the distribution cannot be considered normal.
+Judging by the skewness value, the data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning deviations from zero. Overall, the distribution cannot be considered normal.
 ```{r}
 basicStats(as.numeric(rtsp5))
 ```
@@ -137,83 +139,91 @@ plot_hist = function(stock_returns, stock_name, xlim=c(-0.3, 0.3)){
 ```
 
 #### BRS
-The distribution cannot be considered normal.
+Evidently, the distribution cannot be considered normal.
 ```{r fig.width = 12, echo=FALSE}
 plot_hist(rtbrs, 'BRS')
 ```
 
 #### RDY
-Despite the high peak, the data is close to the normal distribution.
+Disregarding the high peak, the data is rather close to the normal distribution, however, it still cannot be considered as such.
 ```{r fig.width = 12, echo=FALSE}
 plot_hist(rtrdy, 'RDY')
 ```
 
 #### APC
-
+Evidently, the sample distribution cannot be considered normal.
 ```{r fig.width=12, echo=FALSE}
 plot_hist(rtapc, 'APC')
 ```
 
 #### S&P 500
-
+The distribution of the S&P 500 index is even further from being normal.
 ```{r fig.width=12, echo=FALSE}
 plot_hist(rtsp5, 'S&P 500', c(-0.1, 0.1))
 ```
+Overall, neither of the sample distributions cannot be considered normal.
 
 ### Task (e)
 
 > Obtain a qq-plot using command qq.plot() from package car and comment on that.
 
 #### BRS
-```{r fig.width=12, echo=FALSE}
+As easily observed from the Q-Q plot, the distribution cannot be considered normal: the tails are too "heavy".
+```{r fig.width=12, echo=FALSE, message = FALSE}
 library(car)
 qqPlot(as.numeric(rtbrs))
 ```
 
 #### RDY
+This one is actually closer to the normal distribution, but the tails here are too "heavy" for the normal distribution as well.
 ```{r fig.width=12, echo=FALSE}
 qqPlot(as.numeric(rtrdy))
 ```
 
 
 #### APC
+Again, the data is clearly not drawn from the normal distribution.
 ```{r fig.width=12, echo=FALSE}
 qqPlot(as.numeric(rtapc))
 ```
 
 
 #### S&P 500
+This is the most extreme case, where the majority of the observations deviates from the straight line. As such, the distribution is not normal.
 ```{r fig.width=12, echo=FALSE}
 qqPlot(as.numeric(rtsp5))
 ```
+
+To sum up, the Q-Q plots testified for non-normality of the sample distributions.
 
 ### Task (f)
 
 > Perform the Jarque-Bera normality test.
 
+The null hypothesis of the Jarque–Bera test states that data is drawn from a normal distribution (more precisely, the sample skewness (S) equals zero, the sample kurtosis (K) - 3). The alternative hypothesis is that S <> 0, K <> 3.
 #### BRS
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(as.numeric(rtbrs))
 ```
 
 
 #### RDY
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(as.numeric(rtrdy))
 ```
 
 
 #### APC
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(as.numeric(rtapc))
 ```
 
 
 #### S&P 500
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(as.numeric(rtsp5))
 ```
@@ -232,24 +242,41 @@ logrtsp5 = na.omit(as.numeric(diff(log(sp5))))
 ```
 
 #### BRS
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, with variation of roughly 3%. 
 
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 44% in log returns, however, he might have gained 18-19% on a different day as well.
+
+The data is moderately skewed to the left. The kurtosis value indicates very high weight of the distribution tales, meaning constant and significant in value deviations from zero. Overall, the distribution is far from normal.
 ```{r}
 basicStats(logrtbrs)
 ```
 
 #### RDY
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, with variation of roughly 2%. 
 
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 20% in log returns, however, he might have gained 10% on a different day as well.
+
+The data is moderately skewed to the left. The kurtosis value indicates high weight of the distribution tales, meaning constant deviations from zero. Overall, the distribution is far from normal.
 ```{r}
 basicStats(logrtrdy)
 ```
 
 #### APC
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, with variation of roughly 2%. 
+
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 22% in log returns, however, he might have gained 14% on a different day as well.
+
+The data is moderately skewed to the left. The kurtosis value indicates high weight of the distribution tales, meaning constant deviations from zero. Overall, the distribution is far from normal.
 ```{r}
 basicStats(logrtapc)
 ```
 
 #### S&P 500
+The mean is almost zero, proving the hypothesis of stocks not being profitable in the long run. The standard error indicates that the data is close to the mean, with variation of roughly 1%, meaning the data is rather involatile.
 
+Min and max value are influenced by outliers, indicating that in a day an investor might have lost 7% in log returns, however, he might have gained 7% on a different day as well.
+
+The data is fairly symmetrical. The kurtosis value indicates high weight of the distribution tales, meaning constant deviations from zero. Overall, the distribution is not normal.
 ```{r}
 basicStats(logrtsp5)
 ```
@@ -258,22 +285,27 @@ basicStats(logrtsp5)
 
 > Test the null hypothesis that the mean of the log returns is zero.
 
+The null hypothesis of the t-test states the population mean equals zero. The alternative hypothesis states otherwise.
 #### BRS
+The p-value indicates that the null hypothesis cannot be rejected, therefore, the population mean can be considered as equal to zero.
 ```{r}
 t.test(logrtbrs)
 ```
 
 #### RDY
+The p-value indicates that the null hypothesis cannot be rejected, therefore, the population mean can be considered as equal to zero.
 ```{r}
 t.test(logrtrdy)
 ```
 
 #### APC
+The p-value indicates that the null hypothesis cannot be rejected, therefore, the population mean can be considered as equal to zero.
 ```{r}
 t.test(logrtapc)
 ```
 
 #### S&P 500
+The p-value indicates that the null hypothesis should be rejected, as such, the population mean cannot be considered as equal to zero.
 ```{r}
 t.test(logrtsp5)
 ```
@@ -283,29 +315,31 @@ t.test(logrtsp5)
 
 > Perform the Jarque-Bera normality test for log returns.
 
-#### BRS
+The null hypothesis of the test is stated above.
 
+#### BRS
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(logrtbrs)
 ```
 
 
 #### RDY
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(logrtrdy)
 ```
 
 
 #### APC
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(logrtapc)
 ```
 
 
 #### S&P 500
-
+Judging by the p-value, the null hypothesis should be rejected, meaning the data is not normally distributed.
 ```{r}
 jarqueberaTest(logrtsp5)
 ```
@@ -316,9 +350,8 @@ jarqueberaTest(logrtsp5)
 
 ```{r}
 plot_hist_log = function(stock_returns, stock_name, xlim=c(-0.3, 0.3)){
-  hist(as.numeric(stock_returns), breaks=100, prob=T, xlim = xlim, main=paste('Histogram of log daily returns — ', stock_name))
+  hist(as.numeric(stock_returns), breaks=100, prob=T, xlim = xlim, main=paste('Histogram of log daily returns — ', stock_name), xlab = paste('log returns', stock_name))
   lines(density(as.numeric(stock_returns)))
-  #curve(dnorm(x, mean(as.numeric(stock_returns)), sd(as.numeric(stock_returns))), from=xlim[1], to=xlim[2], add=T, col='red')
 }
 ```
 
@@ -352,29 +385,26 @@ respective scatter plots. Comment on the results.
 correl = function(log_rt) {
   plot(log_rt,logrtsp5)
   cat('Pearson correlation: ', cor(log_rt, logrtsp5), '\n')
-  cat('Spearman correlation: ', cor(log_rt, logrtsp5, method='spearman'), '\n')
-  cat('Kendall tau: ', cor(log_rt, logrtsp5, method='kendall'), '\n')
+  cat("Spearman's rank correlation: ", cor(log_rt, logrtsp5, method='spearman'), '\n')
+  cat("Kendall's tau: ", cor(log_rt, logrtsp5, method='kendall'), '\n')
 }
 ```
 
 
 #### BRS
-```{r}
+There is some linearity present between the datasets, testified by correlation coefficients. It means the behaviour can be partly explained by using a linear model.
+```{r fig.width=10}
 correl(logrtbrs)
 ```
 
 #### RDY
-```{r}
+There is some linearity in the datasets as well, meaning it is possible to construct a linear model based on the data.
+```{r fig.width=10}
 correl(logrtrdy)
 ```
 
 #### APC
-```{r}
+This is the most extreme case - on the scatter plot points form a distinctive line, an observation supported by the correlation coefficients. Therefore, a linear model would be a good fit for the data.
+```{r fig.width=10}
 correl(logrtapc)
 ```
-
-
-#### BRS
-#### RDY
-#### APC
-#### S&P 500
