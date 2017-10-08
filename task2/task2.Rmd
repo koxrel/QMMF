@@ -1,0 +1,89 @@
+---
+title: "Assignment on linear models"
+output: html_notebook
+---
+
+Anadarko Petroleum Corp. (APC) has been chosen to complete the assignment.
+
+The data is obtained from Google Finance for a period since 2009/01/01, each observation is a single day.
+
+**All statistical assumptions and conclusions are made on the 5% significance level.**
+
+The closing price is obtained the following way:
+```{r message=FALSE}
+library(quantmod)
+apc = Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2009-01-01'))
+```
+
+# Stationary AR models
+## Task (a)
+
+> Compute and plot the log price xt and the log return rt. Comment on the two plots
+(how volatile the data are, volatility clustering, outliers etc).
+
+```{r}
+logapc = log(apc)
+logrtapc = diff(logapc)
+
+plot(logapc)
+plot(logrtapc)
+```
+
+## Task (b)
+
+> Compute and plot the first 12 lags of ACF of xt. Comment on the plot. Based on the
+ACF, is there a unit root in xt dataset? Why?
+
+```{r}
+acf(as.numeric(na.omit(logapc)))
+```
+
+## Task (c)
+
+> Consider the time series for rt. Perform the Ljung-Box test for m = 12. Draw a
+conclusion and justify it with the statistical language, i.e., in terms of the critical
+region or p-value.
+
+```{r}
+Box.test(as.numeric(logrtapc), lag=12, type='Ljung-Box')
+```
+
+## Task (d)
+
+> Use the command ar(rt,method='mle',order.max=20) to specify the order of an AR
+model for rt. Use the PACF and AIC criteria (ar() and pacf() commands). Compare
+both approaches.
+
+```{r}
+ar(as.numeric(na.omit(logrtapc)),method='mle',order.max=20)
+```
+
+```{r}
+ar2$aic
+```
+
+```{r}
+pacf(as.numeric(na.omit(logrtapc)))
+```
+
+## Task (e)
+
+> Build an AR model for rt. Plot the time series of the residuals, ACF and p-values of
+the Ljung-Box test (command tsdiag()). Perform the Ljung-Box test of the residuals
+by hand adjusting the degrees of freedom for the number of the model parameters (see
+[2], p.66). Is the model adequate? Why? Refine the model by eliminating all estimates
+with t-ratio less than 1.645 and check the new model as described above. Is the new
+model adequate? Why? Write down the final model.
+
+```{r}
+ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0))
+ar2
+
+ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0), fixed=c(0, NA, NA))
+ar2
+```
+
+```{r fig.width=12}
+tsdiag(ar2)
+```
+
