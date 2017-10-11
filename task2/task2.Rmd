@@ -3,6 +3,8 @@ title: "Assignment on linear models"
 output: html_notebook
 ---
 
+## Ксюша, шоколад белый с корицей))
+
 Anadarko Petroleum Corp. (APC) has been chosen to complete the assignment.
 
 The data is obtained from Google Finance for a period since 2009/01/01, each observation is a single day.
@@ -87,3 +89,65 @@ ar2
 tsdiag(ar2)
 ```
 
+## Task (f)
+
+> Does the model imply existence of a cycle? Why? If the cycles are present, compute
+the average length of these cycles.
+
+```{r}
+k = predict(ar2, 5)
+k
+```
+
+# MA model
+
+## Task (a)
+
+> Choose the order of such model. Support your choice with the ACF plot.
+
+```{r}
+acf(as.numeric(na.omit(logrtapc)))
+```
+
+## Task (b)
+
+> Build the model. Refne it by removing coefficients estimates with t-ratio less than
+1.645. Write down the ftted model.
+
+```{r fig.width=12}
+ma2 = arima(as.numeric(na.omit(logrtapc)), order=c(0,0,2))
+ma2
+
+ma2 = arima(as.numeric(na.omit(logrtapc)), order=c(0,0,2), fixed=c(0, NA, NA))
+ma2
+
+tsdiag(ma2)
+```
+
+## Task (c)
+
+> Compute the Ljung-Box statistic of the residuals of the fitted MA model. Is there serial
+correlation in the residuals? Why?
+
+```{r fig.width=12}
+Box.test(ma2$residuals, lag=12, type='Ljung-Box')
+```
+
+## Task (d)
+
+> Consider the in-sample fits of the AR model of Problem 1 and the MA model. Which
+model is preferred? Why?
+
+<!-- Something about the AIC goes here, because otherwise they deal with the data quite well -->
+
+## Task (e)
+
+> Use backtest at some forecast origin with horizon h = 1 to compare the two models.
+Indicate clearly the parameters of such backtesting (the estimation and forecasting
+subsamples, forecast origin and so on). Which model is preferred? Why?
+
+<!-- I guess I need to check the lecture slides -->
+
+# ARIMA model
+
+> 
