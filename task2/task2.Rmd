@@ -3,7 +3,7 @@ title: "Assignment on linear models"
 output: html_notebook
 ---
 
-## Ксюша, шоколад белый с корицей))
+## Ксюша, шоколад белый с ванилью))
 
 Anadarko Petroleum Corp. (APC) has been chosen to complete the assignment.
 
