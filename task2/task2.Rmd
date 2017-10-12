@@ -150,4 +150,27 @@ subsamples, forecast origin and so on). Which model is preferred? Why?
 
 # ARIMA model
 
-> 
+> Yet again, focus on the log return series rt of the asset from Problem 1. Build an ARMA
+model including
+(a) Choosing the order of the model,
+(b) Writing down the model,
+(c) Checking the model for adequacy by analyzing the residuals,
+(d) Backtesting and comparing the model with those of Problems 1 and 2.
+
+# Daily range
+
+> Consider the daily range (daily high minus daily low) of a \blue chip" stock (Apple, Coca-
+Cola etc.) for the last 4 years. Compute the rst 100 lags of ACF of this series. Is there
+evidence of long-range dependence? Explain! If the range series has long memory, build an
+AFRIMA model for the data.
+
+# ARCH effect
+
+> (a) Build an appropriate ARMA model.
+(b) Test the residuals for the ARCH effect.
+(c) Fit an ARMA-GARCH Gaussian model to the data.
+(d) Check the model by analyzing standardized residuals.
+(e) Rebuild and check the model using Student t innovations.
+(f) Build and check an ARMA-APACRH model (order=2).
+(g) Make and plot forecasts based on the above models.
+
