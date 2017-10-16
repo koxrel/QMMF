@@ -3,8 +3,6 @@ title: "Assignment on linear models"
 output: html_notebook
 ---
 
-## Ксюша, шоколад должен быть белый с ванилью))
-
 Anadarko Petroleum Corp. (APC) has been chosen to complete the assignment.
 
 The data is obtained from Google Finance for a period since 2009/01/01, each observation is a single day.
@@ -20,35 +18,41 @@ apc = Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2009-01-01'))
 # Stationary AR models
 ## Task (a)
 
-> Compute and plot the log price xt and the log return rt. Comment on the two plots
+> Compute and plot the log price $x^t$ and the log return $r^t$. Comment on the two plots
 (how volatile the data are, volatility clustering, outliers etc).
 
 ```{r}
 logapc = log(apc)
-logrtapc = diff(logapc)
+logrtapc = na.omit(diff(logapc))
 
 plot(logapc)
+```
+The log price has an upward trend and can be considered pretty volatile. The series is non-stationary.
+```{r}
 plot(logrtapc)
 ```
+The log return series, however, does not has a trend, and most observations lie in the $[-0.05; 0.05]$ interval, though some outliers are present (at the start of the series and closer to the end).
 
 ## Task (b)
 
-> Compute and plot the first 12 lags of ACF of xt. Comment on the plot. Based on the
+> Compute and plot the first 12 lags of ACF of $x^t$. Comment on the plot. Based on the
 ACF, is there a unit root in xt dataset? Why?
 
 ```{r}
-acf(as.numeric(na.omit(logapc)))
+acf(na.omit(as.numeric(logapc)), lag=12)
 ```
+The high ACF value of the first twelve lags indicates strong dependence on past observations and an existence of a unit root as ACF is very high (close to one) and decays to zero _exceptionally_ slow. The series cannot be considered stationary.
 
 ## Task (c)
 
-> Consider the time series for rt. Perform the Ljung-Box test for m = 12. Draw a
+> Consider the time series for $r^t$. Perform the Ljung-Box test for m = 12. Draw a
 conclusion and justify it with the statistical language, i.e., in terms of the critical
 region or p-value.
 
 ```{r}
 Box.test(as.numeric(logrtapc), lag=12, type='Ljung-Box')
 ```
+As $p$-value of the test is 0.0535 the null hypothesis cannot be rejected (because $p$-value > 0.05). In other words, the series exhibits no autocorrelation for a number of lags equal to 12.
 
 ## Task (d)
 
@@ -57,20 +61,24 @@ model for rt. Use the PACF and AIC criteria (ar() and pacf() commands). Compare
 both approaches.
 
 ```{r}
-ar(as.numeric(na.omit(logrtapc)),method='mle',order.max=20)
+ar_model = ar(as.numeric(logrtapc),method='mle',order.max=20)
+ar_model
 ```
 
 ```{r}
-ar2$aic
+ar_model$aic
 ```
-
+The minimum value of AIC is reached at the order 2 (meaning an $AR(2)$ model would be the best fit).
 ```{r}
-pacf(as.numeric(na.omit(logrtapc)))
+pacf(as.numeric(logrtapc))
 ```
+Since $PACF$ can be considered equal to zero after the second lag and it only resurfaces on $12^{th}$ observation, the second order model ($AR(2)$)) should be chosen as higher order models are unstable.
+
+Both approaches yield the same result &mdash; an $AR(2)$ model.
 
 ## Task (e)
 
-> Build an AR model for rt. Plot the time series of the residuals, ACF and p-values of
+> Build an AR model for $r^t$. Plot the time series of the residuals, ACF and p-values of
 the Ljung-Box test (command tsdiag()). Perform the Ljung-Box test of the residuals
 by hand adjusting the degrees of freedom for the number of the model parameters (see
 [2], p.66). Is the model adequate? Why? Refine the model by eliminating all estimates
@@ -78,10 +86,7 @@ with t-ratio less than 1.645 and check the new model as described above. Is the 
 model adequate? Why? Write down the final model.
 
 ```{r}
-ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0))
-ar2
-
-ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0), fixed=c(0, NA, NA))
+ar2 = arima(as.numeric(logrtapc), order=c(2,0,0))
 ar2
 ```
 
@@ -89,14 +94,61 @@ ar2
 tsdiag(ar2)
 ```
 
+```{r}
+Box.test(ar2$residuals, lag=12, type='Ljung-Box')
+```
+By performing the test the regular way the $p$-value was obtained.
+```{r}
+pv=1-pchisq(11.624, 10)
+pv
+```
+Now the test statistic and $p$-value were adjusted to 10 degrees of freedom (since two $AR$ coefficients are used in the model). But even by adjusting the $p$-value, it is still high enough to not reject the null hypothesis of data not exhibitiong autocorrelation.
+
+Since residuals are independently distributed, the model can be considered adequate; however, there are insgnificant coefficients which can be eliminated.
+
+The ar1 coefficient is obviously insignificant. t-ratio of $0.48$ only serves to prove the idea. The model can be refined by manually excluding the coefficient.
+
+```{r}
+ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0), fixed=c(0, NA, NA))
+tsdiag(ar2)
+ar2
+```
+The AIC has become lower, which is a good sign &mdash; the model is a better fit.
+
+```{r}
+Box.test(ar2$residuals, lag=12, type='Ljung-Box')
+```
+
+```{r}
+pv=1-pchisq(11.743, 11)
+pv
+```
+The $p$-value is high enough to not reject the null hypothesis, meaning the residuals are still distributed randomly. The model is adequate.
+
+While both models produced non-autocorrelated residuals, the second one has lower AIC, which is better.
+
 ## Task (f)
 
 > Does the model imply existence of a cycle? Why? If the cycles are present, compute
 the average length of these cycles.
 
 ```{r}
-k = predict(ar2, 5)
-k
+p1=c(1, -ar2$coef[1:2])
+r1=polyroot(p1)
+r1
+```
+SInce all the roots are real numbers, the model does not imply existence of a cycle.
+
+## Task (g)
+
+> Use the fitted AR model to compute 1-step to 4-step ahead forecasts of rt at the forecast
+origin corresponding to the last observed date of the time series. Also, compute the
+corresponding 95% interval. Plot these results.
+
+```{r}
+library(forecast)
+k = forecast(ar2, 4)
+plot(k, xlim=c(2205, 2215))
 ```
 
 # MA model
