@@ -3,7 +3,7 @@ title: "Assignment on linear models"
 output: html_notebook
 ---
 
-Anadarko Petroleum Corp. (APC) has been chosen to complete the assignment.
+Internet Initiative Japan Inc. has been chosen to complete the assignment.
 
 The data is obtained from Google Finance for a period since 2009/01/01, each observation is a single day.
 
@@ -12,7 +12,7 @@ The data is obtained from Google Finance for a period since 2009/01/01, each obs
 The closing price is obtained the following way:
 ```{r message=FALSE}
 library(quantmod)
-apc = Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2009-01-01'))
+stock = na.omit(Cl(getSymbols('IIJI', src='google', auto.assign=FALSE, from='2009-01-01')))
 ```
 
 # Stationary AR models
@@ -22,24 +22,29 @@ apc = Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2009-01-01'))
 (how volatile the data are, volatility clustering, outliers etc).
 
 ```{r}
-logapc = log(apc)
-logrtapc = na.omit(diff(logapc))
-
-plot(logapc)
+logst = log(stock)
+logrt = na.omit(diff(logst))
 ```
+
 The log price has an upward trend and can be considered pretty volatile. The series is non-stationary.
 ```{r}
-plot(logrtapc)
+plot(logst)
 ```
-The log return series, however, does not has a trend, and most observations lie in the $[-0.05; 0.05]$ interval, though some outliers are present (at the start of the series and closer to the end).
+
+The log return series, however, does not has a trend, and most observations lie in the $[-0.1; 0.1]$ interval, though some outliers are present (at the start of the series and closer to the end).
+
+```{r}
+plot(logrt)
+```
+
 
 ## Task (b)
 
 > Compute and plot the first 12 lags of ACF of $x^t$. Comment on the plot. Based on the
-ACF, is there a unit root in xt dataset? Why?
+ACF, is there a unit root in $x^t$ dataset? Why?
 
 ```{r}
-acf(na.omit(as.numeric(logapc)), lag=12)
+acf(logst, lag=12)
 ```
 The high ACF value of the first twelve lags indicates strong dependence on past observations and an existence of a unit root as ACF is very high (close to one) and decays to zero _exceptionally_ slow. The series cannot be considered stationary.
 
@@ -50,9 +55,9 @@ conclusion and justify it with the statistical language, i.e., in terms of the c
 region or p-value.
 
 ```{r}
-Box.test(as.numeric(logrtapc), lag=12, type='Ljung-Box')
+Box.test(as.numeric(logrt), lag=12, type='Ljung-Box')
 ```
-As $p$-value of the test is 0.0535 the null hypothesis cannot be rejected (because $p$-value > 0.05). In other words, the series exhibits no autocorrelation for a number of lags equal to 12.
+As $p$-value of the test is 0.03997 the null hypothesis should be rejected (because $p$-value < 0.05). In other words, the series exhibits autocorrelation for a number of lags equal to 12.
 
 ## Task (d)
 
@@ -61,20 +66,22 @@ model for rt. Use the PACF and AIC criteria (ar() and pacf() commands). Compare
 both approaches.
 
 ```{r}
-ar_model = ar(as.numeric(logrtapc),method='mle',order.max=20)
+ar_model = ar(as.numeric(logrt), method='mle', order.max=20)
 ar_model
 ```
 
 ```{r}
 ar_model$aic
 ```
-The minimum value of AIC is reached at the order 2 (meaning an $AR(2)$ model would be the best fit).
-```{r}
-pacf(as.numeric(logrtapc))
-```
-Since $PACF$ can be considered equal to zero after the second lag and it only resurfaces on $12^{th}$ observation, the second order model ($AR(2)$)) should be chosen as higher order models are unstable.
 
-Both approaches yield the same result &mdash; an $AR(2)$ model.
+The minimum value of AIC is reached at the order 1 (meaning an $AR(1)$ model would be the best fit).
+
+```{r}
+pacf(as.numeric(logrt))
+```
+Since $PACF$ can be considered equal to zero after the second lag and it only resurfaces on $14^{th}$ observation, the first order model ($AR(1)$)) should be chosen as higher order models are unstable.
+
+Both approaches yield the same result &mdash; an $AR(1)$ model.
 
 ## Task (e)
 
@@ -86,46 +93,34 @@ with t-ratio less than 1.645 and check the new model as described above. Is the 
 model adequate? Why? Write down the final model.
 
 ```{r}
-ar2 = arima(as.numeric(logrtapc), order=c(2,0,0))
-ar2
+ar_model = arima(as.numeric(logrt), order=c(1,0,0))
+ar_model
 ```
 
 ```{r fig.width=12}
-tsdiag(ar2)
+tsdiag(ar_model)
 ```
 
 ```{r}
-Box.test(ar2$residuals, lag=12, type='Ljung-Box')
+Box.test(ar_model$residuals, lag=12, type='Ljung-Box')
 ```
 By performing the test the regular way the $p$-value was obtained.
 ```{r}
-pv=1-pchisq(11.624, 10)
+pv=1-pchisq(10.414, 11)
 pv
 ```
-Now the test statistic and $p$-value were adjusted to 10 degrees of freedom (since two $AR$ coefficients are used in the model). But even by adjusting the $p$-value, it is still high enough to not reject the null hypothesis of data not exhibitiong autocorrelation.
+Now the test statistic and $p$-value were adjusted to 11 degrees of freedom (since one $AR$ coefficient is used in the model). But even by adjusting the $p$-value, it is still high enough to not reject the null hypothesis of data not exhibiting autocorrelation.
 
-Since residuals are independently distributed, the model can be considered adequate; however, there are insgnificant coefficients which can be eliminated.
+Since residuals are independently distributed, the model can be considered adequate; also, there are no statistically insignificant coefficients (with t-ratio < 1.645).
 
-The ar1 coefficient is obviously insignificant. t-ratio of $0.48$ only serves to prove the idea. The model can be refined by manually excluding the coefficient.
+Further refinements cannot be applied.
+The final model can be written as
 
-```{r}
-ar2 = arima(as.numeric(na.omit(logrtapc)), c(2,0,0), fixed=c(0, NA, NA))
-tsdiag(ar2)
-ar2
-```
-The AIC has become lower, which is a good sign &mdash; the model is a better fit.
+\begin{align}
+y = 0.0006 - 0.0763 \times ar_1,
+\end{align}
 
-```{r}
-Box.test(ar2$residuals, lag=12, type='Ljung-Box')
-```
-
-```{r}
-pv=1-pchisq(11.743, 11)
-pv
-```
-The $p$-value is high enough to not reject the null hypothesis, meaning the residuals are still distributed randomly. The model is adequate.
-
-While both models produced non-autocorrelated residuals, the second one has lower AIC, which is better.
+where $ar_1$ denotes the first $AR$ variable.
 
 ## Task (f)
 
@@ -133,7 +128,7 @@ While both models produced non-autocorrelated residuals, the second one has lowe
 the average length of these cycles.
 
 ```{r}
-p1=c(1, -ar2$coef[1:2])
+p1=c(1, -ar_model$coef[1:1])
 r1=polyroot(p1)
 r1
 ```
@@ -147,34 +142,38 @@ corresponding 95% interval. Plot these results.
 
 ```{r}
 library(forecast)
-k = forecast(ar2, 4)
-plot(k, xlim=c(2205, 2215))
+f = forecast(ar_model, 4)
+plot(f, xlim=c(2156, 2167))
 ```
 
-# MA model
+# MA model for $r^t$
 
 ## Task (a)
 
 > Choose the order of such model. Support your choice with the ACF plot.
 
 ```{r}
-acf(as.numeric(na.omit(logrtapc)))
+acf(as.numeric(logrt))
 ```
+According to the ACF plot of the log price series, after the first lag most of the ACF values can be considered equal to zero. As such, the appropriate model is $MA(1)$.
 
 ## Task (b)
 
-> Build the model. Refne it by removing coefficients estimates with t-ratio less than
-1.645. Write down the ftted model.
+> Build the model. Refine it by removing coefficients estimates with t-ratio less than 1.645. Write down the fitted model.
 
 ```{r fig.width=12}
-ma2 = arima(as.numeric(na.omit(logrtapc)), order=c(0,0,2))
-ma2
-
-ma2 = arima(as.numeric(na.omit(logrtapc)), order=c(0,0,2), fixed=c(0, NA, NA))
-ma2
-
-tsdiag(ma2)
+ma_model = arima(as.numeric(logrt), order=c(0,0,1))
+ma_model
 ```
+There are no coefficients with t-ratio less than 1.645, so further adjustments are inapplicable.
+
+The final $MA$ model can be denoted as
+
+\begin{align}
+y = 0.0005 - 0.0806 \times ma_1,
+\end{align}
+
+where $ma_1$ denotes the first $MA$ variable.
 
 ## Task (c)
 
@@ -182,15 +181,20 @@ tsdiag(ma2)
 correlation in the residuals? Why?
 
 ```{r fig.width=12}
-Box.test(ma2$residuals, lag=12, type='Ljung-Box')
+Box.test(ma_model$residuals, lag=12, type='Ljung-Box', fitdf = 1)
 ```
+The test statistic above is already adjusted to account for one moving average component (df = 11). 
+
+The $p$-value is high enough to not reject the null hypothesis, meaning the residuals are distributed independently. In other words, there is no serial correlation in the residuals.
 
 ## Task (d)
 
 > Consider the in-sample fits of the AR model of Problem 1 and the MA model. Which
 model is preferred? Why?
 
-<!-- Something about the AIC goes here, because otherwise they deal with the data quite well -->
+The AIC of the $MA$-model is lower compared to the $AR$-model (-9156.346 versus -9155.661, respectively); thus, the MA model is preferable.
+
+However, since the difference of the two values is miniscule, both models deal with the data almost the same way.
 
 ## Task (e)
 
@@ -198,31 +202,159 @@ model is preferred? Why?
 Indicate clearly the parameters of such backtesting (the estimation and forecasting
 subsamples, forecast origin and so on). Which model is preferred? Why?
 
-<!-- I guess I need to check the lecture slides -->
+```{r}
+source("http://faculty.chicagobooth.edu/ruey.tsay/teaching/bs41202/sp2014/backtest.R")
+bt = backtest(ar_model, as.numeric(logrt), 200, 1)
+bt$rmse
+```
+
+```{r}
+bt = backtest(ma_model, as.numeric(logrt), 200, 1)
+bt$rmse
+```
+
+According to RMSE, $MA$ model predicts better, as such, it should be used for creating forecasts.
+
+But again, the difference is even smaller and only appears in the sixth digit after the point.
 
 # ARIMA model
 
-> Yet again, focus on the log return series rt of the asset from Problem 1. Build an ARMA
+> Yet again, focus on the log return series $r^t$ of the asset from Problem 1. Build an ARMA
 model including
 (a) Choosing the order of the model,
 (b) Writing down the model,
 (c) Checking the model for adequacy by analyzing the residuals,
 (d) Backtesting and comparing the model with those of Problems 1 and 2.
 
+## Task (a)
+
+```{r message=FALSE}
+library(TSA)
+eacf(logrt)
+```
+A vertex of a triangle can be formed on intersection of 1 for $AR$ and 1 for $MA$. Therefore, the model should be $ARMA(1, 1)$. 
+
+## Task (b)
+
+In the following line the model is built:
+
+```{r }
+arma_model = arima(logrt, order=c(1,0,1))
+arma_model
+```
+
+The model can be written as:
+
+\begin{align}
+y = 0.0005 + 0.4257 \times ar_1 - 0.5019 \times ma_1.
+\end{align}
+
+## Task (c)
+
+```{r}
+Box.test(arma_model$residuals, lag=12, type='Ljung-Box', fitdf = 2)
+```
+The $p$-value indicates that the null hypothesis cannot be rejected, meaning there is no autocorrelation in the residuals. As such, the model is adequate.
+
+## Task (d)
+
+```{r warning=FALSE}
+bt = backtest(arma_model, as.numeric(logrt), 200, 1)
+bt$rmse
+```
+
+Judging by RMSE metric, the $ARMA(1, 1)$ model is worse than $AR(1)$ and$MA(1)$ models.
+
+But again, the difference only appears in the sixth digit after the decimal point.
+
 # Daily range
 
-> Consider the daily range (daily high minus daily low) of a \blue chip" stock (Apple, Coca-
-Cola etc.) for the last 4 years. Compute the rst 100 lags of ACF of this series. Is there
+> Consider the daily range (daily high minus daily low) of a "blue chip" stock (Apple, Coca-
+Cola etc.) for the last 4 years. Compute the first 100 lags of ACF of this series. Is there
 evidence of long-range dependence? Explain! If the range series has long memory, build an
 AFRIMA model for the data.
 
+PepsiCo, Inc. was chosen as the blue chip stock
+
+```{r}
+blue_stock = na.omit(getSymbols('PEP', src='google', auto.assign=FALSE, from='2013-01-01'))
+blue_st_range = blue_stock$PEP.High - blue_stock$PEP.Low
+acf(as.numeric(blue_st_range), lag=100)
+```
+
+This series does not have long-term memory &mdash; most ACF coefficients can be considered equal to zero after the first three lags. Therefore, there is no reason to build an AFRIMA model for the data.
+
 # ARCH effect
 
+> Consider the log return series $r^t$ of the asset from Problem 1.
+
+## Task (a)
+
 > (a) Build an appropriate ARMA model.
-(b) Test the residuals for the ARCH effect.
-(c) Fit an ARMA-GARCH Gaussian model to the data.
-(d) Check the model by analyzing standardized residuals.
-(e) Rebuild and check the model using Student t innovations.
-(f) Build and check an ARMA-APACRH model (order=2).
-(g) Make and plot forecasts based on the above models.
+
+The model was built earlier:
+```{r}
+arma_model
+```
+
+## Task (b)
+
+> (b) Test the residuals for the ARCH effect.
+
+```{r}
+acf(arma_model$residuals^2)
+```
+
+The residuals exhibit the ARCH effect.
+
+## Task (c)
+
+> (c) Fit an ARMA-GARCH Gaussian model to the data.
+
+```{r message=FALSE}
+library(fGarch)
+garch_model = garchFit(~arma(1,1)+garch(1, 1), data=logrt, trace=FALSE)
+summary(garch_model)
+```
+
+## Task (d)
+
+> (d) Check the model by analyzing standardized residuals.
+
+```{r}
+plot(garch_model)
+summary(garch_model)
+```
+
+## Task (e)
+
+> (e) Rebuild and check the model using Student t innovations.
+
+```{r}
+garch_model_st = garchFit(~arma(1,1)+garch(1, 1), data=logrt, trace=FALSE, cond.dist = 'sstd')
+summary(garch_model_st)
+```
+
+
+```{r}
+plot(garch_model_st)
+```
+
+## Task (f)
+
+> (f) Build and check an ARMA-APARCH model (order=2).
+
+```{r}
+aparch_model = garchFit(formula=~arma(1,1)+aparch(1,1), data=logrt, delta=2, include.delta = F, trace=F)
+summary(aparch_model)
+```
+
+## Task (g)
+
+> (g) Make and plot forecasts based on the above models.
+
+```{r}
+plot(aparch_model, ask=9)
+plot(predict(garch_model, )$meanForecast, type='l')
+```
 
