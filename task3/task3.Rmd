@@ -1,0 +1,106 @@
+---
+title: "Assignment on blackbox models"
+output: html_notebook
+---
+
+Internet Initiative Japan Inc. has been chosen to complete the assignment.
+
+The data is obtained from Google Finance for the stock and from Yahoo Finance for the S&P 500 index for a period since 2009/01/01, each observation is a single day.
+
+**All statistical assumptions and conclusions are made on the 5% significance level.**
+
+The data is obtained the following way:
+```{r message=FALSE}
+library(quantmod)
+
+stock = as.numeric(na.omit(Cl(getSymbols('RDY', src='google', auto.assign=FALSE, from='2007-01-01'))))
+log_rt = na.omit(diff(log(stock)))
+
+sp5 = as.numeric(na.omit(Cl(getSymbols('^GSPC', src='yahoo', auto.assign=FALSE, from='2007-01-01'))))
+sp_rt = na.omit(diff(log(sp5)))
+# sp_rt = sp_rt[2:length(sp_rt)]
+```
+
+## Task (a)
+
+> Divide the data set into the training and forecast subsets. Clearly state this partition
+in your report.
+
+The feature vectors and, ultimately, the feature matrix will be prepared:
+```{r}
+n_obs = length(log_rt)
+rt_feat = rep.int(0, n_obs)
+rt_feat[log_rt>0] = 1
+
+sp_feat = rep.int(0, n_obs)
+sp_feat[sp_rt>0] = 1
+
+feat_matrix = matrix(0, n_obs-3, 7)
+
+feat_matrix[,1] = rt_feat[4:n_obs]
+feat_matrix[,2] = rt_feat[3:(n_obs-1)]
+feat_matrix[,3] = rt_feat[2:(n_obs-2)]
+feat_matrix[,4] = rt_feat[1:(n_obs-3)]
+
+feat_matrix[,5] = sp_feat[3:(n_obs-1)]
+feat_matrix[,6] = sp_feat[2:(n_obs-2)]
+feat_matrix[,7] = sp_feat[1:(n_obs-3)]
+```
+
+Then the feature matrix will be converted to a dataframe object, which then will be partitioned into two subsets in the ratio 70/30:
+```{r}
+features = as.data.frame(feat_matrix)
+train = features[1:2000, ]
+test = features[2001:length(features), ]
+```
+
+## Task (b)
+
+> Fit a linear logistic regression model for P(Dt = 1) using Dt????i, Mt????i, i = 1; 2; 3 as
+explanatory variables. Use only the training subset for estimation. Discuss statistical
+significance of the coefficients. Refine the model if needed.
+
+```{r}
+log_reg = glm(V1~V2+V3+V4+V5+V6+V7, data=train, family="binomial")
+summary(log_reg)
+```
+As only the fifth variable (S&P 500 3 steps before) is statistically significant, the rest can be omitted.
+```{r}
+log_reg = glm(V1~V5, data=train, family="binomial")
+summary(log_reg)
+```
+
+## Task (c)
+
+> Using the model, make predictions for the forecast subset. Specify the threshold you
+apply. Compute the forecast error.
+
+First, the forecast for the test subset will be obtained:
+```{r}
+log_forecast = predict(log_reg, test, type="response")
+```
+
+Then it will be converted to binary variable and represented as a table:
+```{r}
+log_pred = rep.int(0, length(log_forecast))
+log_pred[log_forecast>0.5] = 1
+table(log_pred, test$V1)
+```
+
+```{r}
+accuracy = (558+481)/(537+419+558+481)
+accuracy
+1 - accuracy
+```
+
+## Task (d)
+
+> Apply the linear discriminant analysis instead of log regression in items 1a-1c. Compute
+the forecast error.
+
+```{r}
+lda_model = lda(V1~V2+V3+V4+V5+V6+V7, data=train)
+lda_model
+```
+
+
