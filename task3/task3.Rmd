@@ -51,7 +51,7 @@ Then the feature matrix will be converted to a dataframe object, which then will
 ```{r}
 features = as.data.frame(feat_matrix)
 train = features[1:2000, ]
-test = features[2001:length(features), ]
+test = features[2001:2714, ]
 ```
 
 ## Task (b)
@@ -88,7 +88,7 @@ table(log_pred, test$V1)
 ```
 
 ```{r}
-accuracy = (558+481)/(537+419+558+481)
+accuracy = (202+185)/(202+185+158+169)
 accuracy
 1 - accuracy
 ```
@@ -99,8 +99,83 @@ accuracy
 the forecast error.
 
 ```{r}
+library(MASS)
+
 lda_model = lda(V1~V2+V3+V4+V5+V6+V7, data=train)
 lda_model
 ```
 
+```{r}
+lda_forecast = predict(lda_model, test, type="response")$class
+table(lda_forecast, test$V1)
+```
+
+```{r}
+accuracy = (153+235)/(153+235+207+119)
+accuracy
+1 - accuracy
+```
+
+## Task (f)
+
+> Apply the quadratic discriminant analysis instead of log regression in items 1a-1c.
+Compute the forecast error.
+
+```{r}
+qda_model = qda(V1~V2+V3+V4+V5+V6+V7, data=train)
+qda_model
+```
+
+```{r}
+qda_forecast = predict(qda_model, test, type="response")$class
+table(qda_forecast, test$V1)
+```
+
+```{r}
+accuracy = (117+227)/(117+227+127+243)
+accuracy
+1 - accuracy
+```
+
+## Task (f)
+
+> Employ a 4-3-1 look-forward neural network with direct link for P(Dt = 1) instead of
+log regression in items 1a-1c. Build a model for two (i = 1; 2) lagged variables D, M.
+Compute the forecast error.
+
+```{r}
+feat_matrix = matrix(0, n_obs-2, 5)
+
+feat_matrix[,1] = rt_feat[3:n_obs]
+feat_matrix[,2] = rt_feat[2:(n_obs-1)]
+feat_matrix[,3] = rt_feat[1:(n_obs-2)]
+
+feat_matrix[,4] = sp_feat[2:(n_obs-1)]
+feat_matrix[,5] = sp_feat[1:(n_obs-2)]
+
+features = as.data.frame(feat_matrix)
+train = features[1:2000, ]
+test = features[2001:2715, ]
+```
+
+```{r}
+library(nnet)
+
+nnet_model = nnet(V1~V2+V3+V4+V5, data=train, size=3)
+summary(nnet_model)
+```
+
+```{r}
+nnet_forecast = predict(nnet_model, test)
+
+nnet_pred = rep.int(0, length(nnet_forecast))
+nnet_pred[nnet_forecast>0.5] = 1
+table(nnet_pred, test$V1)
+```
+
+```{r}
+accuracy = (149+212)/(149+142+212+212)
+accuracy
+1 - accuracy
+```
 
