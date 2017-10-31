@@ -1,6 +1,9 @@
 ---
-title: "Assignment on linear models"
-output: html_notebook
+title: "Assignment on ARMA-GARCH model"
+author: Igor Tresoumov, BBI 141
+output:
+  word_document: default
+  html_notebook: default
 ---
 
 Internet Initiative Japan Inc. has been chosen to complete the assignment.
@@ -26,16 +29,16 @@ logst = log(stock)
 logrt = na.omit(diff(logst))
 ```
 
-The log price has an upward trend and can be considered pretty volatile. The series is non-stationary.
+
 ```{r}
 plot(logst)
 ```
-
-The log return series, however, does not has a trend, and most observations lie in the $[-0.1; 0.1]$ interval, though some outliers are present (at the start of the series and closer to the end).
+The log price has an upward trend and can be considered pretty volatile. The series is non-stationary.
 
 ```{r}
 plot(logrt)
 ```
+The log return series, however, does not has a trend, and most observations lie in the $[-0.1; 0.1]$ interval, though some outliers are present (at the start of the series and closer to the end).
 
 
 ## Task (b)
@@ -46,7 +49,7 @@ ACF, is there a unit root in $x^t$ dataset? Why?
 ```{r}
 acf(logst, lag=12)
 ```
-The high ACF value of the first twelve lags indicates strong dependence on past observations and an existence of a unit root as ACF is very high (close to one) and decays to zero _exceptionally_ slow. The series cannot be considered stationary.
+The high ACF value of the first twelve lags indicates strong dependence on past observations and an existence of a unit root as ACF is very high (close to one) and decays to zero _really_ slow. The series cannot be considered stationary.
 
 ## Task (c)
 
@@ -57,7 +60,7 @@ region or p-value.
 ```{r}
 Box.test(as.numeric(logrt), lag=12, type='Ljung-Box')
 ```
-As $p$-value of the test is 0.03997 the null hypothesis should be rejected (because $p$-value < 0.05). In other words, the series exhibits autocorrelation for a number of lags equal to 12.
+As $p$-value of the test is 0.04033 the null hypothesis should be rejected (because $p$-value < 0.05). In other words, the series exhibits autocorrelation for a number of lags equal to 12.
 
 ## Task (d)
 
@@ -79,7 +82,7 @@ The minimum value of AIC is reached at the order 1 (meaning an $AR(1)$ model wou
 ```{r}
 pacf(as.numeric(logrt))
 ```
-Since $PACF$ can be considered equal to zero after the second lag and it only resurfaces on $14^{th}$ observation, the first order model ($AR(1)$)) should be chosen as higher order models are unstable.
+Since $PACF$ can be considered equal to zero after the first lag and it only resurfaces on $14^{th}$ observation, the first order model ($AR(1)$)) should be chosen as higher order models are unstable.
 
 Both approaches yield the same result &mdash; an $AR(1)$ model.
 
@@ -109,7 +112,7 @@ By performing the test the regular way the $p$-value was obtained.
 pv=1-pchisq(10.414, 11)
 pv
 ```
-Now the test statistic and $p$-value were adjusted to 11 degrees of freedom (since one $AR$ coefficient is used in the model). But even by adjusting the $p$-value, it is still high enough to not reject the null hypothesis of data not exhibiting autocorrelation.
+Now the test statistic and $p$-value were adjusted to 11 degrees of freedom (since one $AR$ coefficient is used in the model). But even by adjusting the $p$-value, it is still high enough to not reject the null hypothesis of residuals not exhibiting autocorrelation.
 
 Since residuals are independently distributed, the model can be considered adequate; also, there are no statistically insignificant coefficients (with t-ratio < 1.645).
 
@@ -128,11 +131,11 @@ where $ar_1$ denotes the first $AR$ variable.
 the average length of these cycles.
 
 ```{r}
-p1=c(1, -ar_model$coef[1:1])
+p1=c(1, -ar_model$coef[1])
 r1=polyroot(p1)
 r1
 ```
-SInce all the roots are real numbers, the model does not imply existence of a cycle.
+Since the root is a real number, the model does not imply existence of a cycle.
 
 ## Task (g)
 
@@ -140,10 +143,10 @@ SInce all the roots are real numbers, the model does not imply existence of a cy
 origin corresponding to the last observed date of the time series. Also, compute the
 corresponding 95% interval. Plot these results.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(forecast)
 f = forecast(ar_model, 4)
-plot(f, xlim=c(2156, 2167))
+plot(f, xlim=c(2164, 2170))
 ```
 
 # MA model for $r^t$
@@ -170,7 +173,7 @@ There are no coefficients with t-ratio less than 1.645, so further adjustments a
 The final $MA$ model can be denoted as
 
 \begin{align}
-y = 0.0005 - 0.0806 \times ma_1,
+y = 0.0006 - 0.0806 \times ma_1,
 \end{align}
 
 where $ma_1$ denotes the first $MA$ variable.
@@ -192,9 +195,9 @@ The $p$-value is high enough to not reject the null hypothesis, meaning the resi
 > Consider the in-sample fits of the AR model of Problem 1 and the MA model. Which
 model is preferred? Why?
 
-The AIC of the $MA$-model is lower compared to the $AR$-model (-9156.346 versus -9155.661, respectively); thus, the MA model is preferable.
+The AIC of the $MA$-model is lower compared to the $AR$-model (-9171.23 versus -9170.55, respectively); thus, the MA model is preferable.
 
-However, since the difference of the two values is miniscule, both models deal with the data almost the same way.
+However, since the difference of the two values is not high, both models deal with the data almost the same way.
 
 ## Task (e)
 
@@ -228,7 +231,7 @@ model including
 
 ## Task (a)
 
-```{r message=FALSE}
+```{r warning=FALSE, message=FALSE}
 library(TSA)
 eacf(logrt)
 ```
@@ -246,7 +249,7 @@ arma_model
 The model can be written as:
 
 \begin{align}
-y = 0.0005 + 0.4257 \times ar_1 - 0.5019 \times ma_1.
+y = 0.0005 + 0.4114 \times ar_1 - 0.4883 \times ma_1.
 \end{align}
 
 ## Task (c)
@@ -267,7 +270,7 @@ Judging by RMSE metric, the $ARMA(1, 1)$ model is worse than $AR(1)$ and$MA(1)$ 
 
 But again, the difference only appears in the sixth digit after the decimal point.
 
-# Daily range
+# Daily range of a "blue chip" stock
 
 > Consider the daily range (daily high minus daily low) of a "blue chip" stock (Apple, Coca-
 Cola etc.) for the last 4 years. Compute the first 100 lags of ACF of this series. Is there
@@ -282,7 +285,7 @@ blue_st_range = blue_stock$PEP.High - blue_stock$PEP.Low
 acf(as.numeric(blue_st_range), lag=100)
 ```
 
-This series does not have long-term memory &mdash; most ACF coefficients can be considered equal to zero after the first three lags. Therefore, there is no reason to build an AFRIMA model for the data.
+This series does not have long-term memory &mdash; most ACF coefficients can be considered equal to zero after the first four lags. Therefore, there is no reason to build an AFRIMA model for the data.
 
 # ARCH effect
 
@@ -311,7 +314,7 @@ The residuals exhibit the ARCH effect.
 
 > (c) Fit an ARMA-GARCH Gaussian model to the data.
 
-```{r message=FALSE}
+```{r warning=FALSE, message=FALSE}
 library(fGarch)
 garch_model = garchFit(~arma(1,1)+garch(1, 1), data=logrt, trace=FALSE)
 summary(garch_model)
@@ -322,9 +325,11 @@ summary(garch_model)
 > (d) Check the model by analyzing standardized residuals.
 
 ```{r}
-plot(garch_model)
+plot(garch_model, which=9)
 summary(garch_model)
 ```
+
+Standardized residuals exhibit ARCH effect on first 10 lags, also there are some outliers which deviate greatly from zero.
 
 ## Task (e)
 
@@ -337,8 +342,10 @@ summary(garch_model_st)
 
 
 ```{r}
-plot(garch_model_st)
+plot(garch_model_st, which=9)
 ```
+
+Standardized residuals deviate less from zero then those of the model built under the assumption of normal distribution; however, there are some outliers (and one even breaches the [-6;6] interval).
 
 ## Task (f)
 
@@ -349,12 +356,30 @@ aparch_model = garchFit(formula=~arma(1,1)+aparch(1,1), data=logrt, delta=2, inc
 summary(aparch_model)
 ```
 
+
+```{r}
+plot(aparch_model, which=9)
+```
+
+Standardized residuals exhibit no ARCH effect, but they are still not very close to zero.
 ## Task (g)
 
 > (g) Make and plot forecasts based on the above models.
 
+Forecast for the ARMA-GARCH model:
 ```{r}
-plot(aparch_model, ask=9)
-plot(predict(garch_model, )$meanForecast, type='l')
+plot(predict(garch_model)$meanForecast, type='l')
+```
+
+Forecast for the ARMA-GARCH model with Student t-innovations:
+
+```{r}
+plot(predict(garch_model_st)$meanForecast, type='l')
+```
+
+Forecast for the ARMA-APARCH model:
+
+```{r}
+plot(predict(aparch_model)$meanForecast, type='l')
 ```
 

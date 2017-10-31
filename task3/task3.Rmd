@@ -1,9 +1,12 @@
 ---
 title: "Assignment on blackbox models"
-output: html_notebook
+author: Igor Tresoumov, BBI 141
+output:
+  word_document: default
+  html_notebook: default
 ---
 
-Internet Initiative Japan Inc. has been chosen to complete the assignment.
+Dr. Reddy's Laboratories has been chosen to complete the assignment.
 
 The data is obtained from Google Finance for the stock and from Yahoo Finance for the S&P 500 index for a period since 2009/01/01, each observation is a single day.
 
@@ -18,7 +21,6 @@ log_rt = na.omit(diff(log(stock)))
 
 sp5 = as.numeric(na.omit(Cl(getSymbols('^GSPC', src='yahoo', auto.assign=FALSE, from='2007-01-01'))))
 sp_rt = na.omit(diff(log(sp5)))
-# sp_rt = sp_rt[2:length(sp_rt)]
 ```
 
 ## Task (a)
@@ -56,7 +58,7 @@ test = features[2001:2714, ]
 
 ## Task (b)
 
-> Fit a linear logistic regression model for P(Dt = 1) using Dt????i, Mt????i, i = 1; 2; 3 as
+> Fit a linear logistic regression model for P(Dt = 1) using Dt-i, Mt-i, i = 1; 2; 3 as
 explanatory variables. Use only the training subset for estimation. Discuss statistical
 significance of the coefficients. Refine the model if needed.
 
@@ -64,11 +66,15 @@ significance of the coefficients. Refine the model if needed.
 log_reg = glm(V1~V2+V3+V4+V5+V6+V7, data=train, family="binomial")
 summary(log_reg)
 ```
+
 As only the fifth variable (S&P 500 3 steps before) is statistically significant, the rest can be omitted.
+
 ```{r}
 log_reg = glm(V1~V5, data=train, family="binomial")
 summary(log_reg)
 ```
+
+The new model's AIC has dropped, but not very much; in return one gets the benefit of a simpler model.
 
 ## Task (c)
 
@@ -90,14 +96,16 @@ table(log_pred, test$V1)
 ```{r}
 accuracy = (202+185)/(202+185+158+169)
 accuracy
-1 - accuracy
 ```
+
+The accuracy rate is 0.54.
 
 ## Task (d)
 
 > Apply the linear discriminant analysis instead of log regression in items 1a-1c. Compute
 the forecast error.
 
+In the following chunk an LDA model will be computed:
 ```{r}
 library(MASS)
 
@@ -113,14 +121,16 @@ table(lda_forecast, test$V1)
 ```{r}
 accuracy = (153+235)/(153+235+207+119)
 accuracy
-1 - accuracy
 ```
+
+While the accuracy rate is higher, this growth cannot be considered dramatic: predictive power is roughly equal compared to the algorithm above.
 
 ## Task (f)
 
 > Apply the quadratic discriminant analysis instead of log regression in items 1a-1c.
 Compute the forecast error.
 
+In the following line a QDA model will be applied to the data:
 ```{r}
 qda_model = qda(V1~V2+V3+V4+V5+V6+V7, data=train)
 qda_model
@@ -134,8 +144,9 @@ table(qda_forecast, test$V1)
 ```{r}
 accuracy = (117+227)/(117+227+127+243)
 accuracy
-1 - accuracy
 ```
+
+The forecasting power of this model has dropped, only reaching 48%.
 
 ## Task (f)
 
@@ -176,6 +187,23 @@ table(nnet_pred, test$V1)
 ```{r}
 accuracy = (149+212)/(149+142+212+212)
 accuracy
-1 - accuracy
 ```
 
+The predictive power of the neural network is roughly equivalent to a constant or throwing a coin: 50% chance of success.
+
+
+## Task (g)
+
+> Compare the predictive power (i.e, forecast error) of methods 1b,1d,1e,1f.
+
+Ordering by accuracy rate results in the following:
+
+1. Linear Discriminant Analysis
+
+2. Logistic Regression
+
+3. Neural Network
+
+4. Quadratic Discriminant Analysis
+
+However, their predictive power is at 50% level: one cannot rely on them to make decisions, other factors should be included.
